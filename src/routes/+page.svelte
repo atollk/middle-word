@@ -2,7 +2,7 @@
     import {onMount} from 'svelte'
     import middleWordsRaw from '#lib/assets/middle_words_eng.txt?raw'
     import dictRaw from '#lib/assets/dict_eng.txt?raw'
-    import WordList, {type Word} from '#lib/word_list.svelte'
+	import WordList, {type Word} from '#lib/word_list.svelte';
 
     const word_distance = 10_000
 
@@ -70,18 +70,10 @@
     }
 </script>
 
-<form onsubmit={submit}>
+<form onsubmit={submit} class="flex items-center flex-col">
     {#if words}
         <WordList words={words}/>
     {/if}
 
-    <input bind:value={inputWord}/>
+    <input class="input" bind:value={inputWord}/>
 </form>
-
-<style>
-    form {
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-    }
-</style>
