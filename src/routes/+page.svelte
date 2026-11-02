@@ -2,7 +2,12 @@
     import {onMount} from 'svelte'
     import middleWordsRaw from '#lib/assets/middle_words_eng.txt?raw'
     import dictRaw from '#lib/assets/dict_eng.txt?raw'
-	import WordList, {type Word} from '#lib/word_list.svelte';
+    import {colorFromDistance} from "#lib/color.ts";
+
+    interface Word {
+        word: string;
+        distanceToMiddle: number;
+    }
 
     const word_distance = 10_000
 
@@ -17,6 +22,7 @@
 
     let words = $state<Word[]>([])
     let inputWord = $state<string>("")
+    let middleGuessed = $state<boolean>(false)
 
     onMount(() => {
         const middle =
@@ -43,8 +49,7 @@
 
         const wordIndex = dictionary.indexOf(word)
         if (wordIndex == -1) {
-            console.error(1)
-            // TODO
+            console.error(`${inputWord} is not a valid word`)
             return
         }
         const [middleWordPos, middleWord] = getMiddleWord()
@@ -54,15 +59,20 @@
         const rightNeighborPosI = words.findIndex((w) => w.distanceToMiddle < wordDistance)
         const rightNeighborPos = rightNeighborPosI < 0 ? null : rightNeighborPosI
 
-        console.log(leftNeighborPos, rightNeighborPos)
         if (
             leftNeighborPos == null ||
             rightNeighborPos == null ||
             (leftNeighborPos < middleWordPos && rightNeighborPos < middleWordPos) ||
             (leftNeighborPos > middleWordPos && rightNeighborPos > middleWordPos)
         ) {
-            console.error(2)
-            // TODO
+            console.error(`${inputWord} is not in the middle of previous guesses`)
+            return
+        }
+
+        // TODO: doesnt quite work ?
+        if (inputWord == middleWord) {
+            console.log("success!")
+            middleGuessed = true
             return
         }
 
@@ -72,8 +82,32 @@
 
 <form onsubmit={submit} class="flex items-center flex-col">
     {#if words}
-        <WordList words={words}/>
+        <div class="flex flex-wrap items-center flex-col">
+            {#each words as word}
+                <div class="flex flex-col items-center w-full gap-2">
+                    <p class="text-xs">
+                        {#if word.distanceToMiddle < 0}
+                            {-word.distanceToMiddle}
+                        {/if}
+                    </p>
+                    <p class="label text-2xl" style:background-color={colorFromDistance(word.distanceToMiddle, 10_000)}>
+                        {#if word.distanceToMiddle == 0}
+                            {#if middleGuessed}
+                                {word.word}
+                            {:else}
+                                <input class="input" bind:value={inputWord}/>
+                            {/if}
+                        {:else}
+                            {word.word}
+                        {/if}
+                    </p>
+                    <p class="text-xs">
+                        {#if word.distanceToMiddle > 0}
+                            {word.distanceToMiddle}
+                        {/if}
+                    </p>
+                </div>
+            {/each}
+        </div>
     {/if}
-
-    <input class="input" bind:value={inputWord}/>
 </form>
