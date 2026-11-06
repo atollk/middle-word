@@ -31,16 +31,23 @@ export function lerp(a: number|Color, b: number|Color, progress: number): number
     }
 }
 
-export function colorFromDistance(distance: number, maxDistance: number): string {
-    const [red, yellow, green] = ["var(--color-error)", "var(--color-warning)", "var(--color-success)"]
-    if (distance == 0) {
-        return green
-    } else if (Math.abs(distance) >= maxDistance) {
-        return red
-    }
-    const logPercentage = 1 - Math.log(Math.abs(distance)) / Math.log(maxDistance)
-    console.log(`distance:${distance}  log:${Math.log(Math.abs(distance))}  logPercentage:${logPercentage}` )
-    const [color1, color2] = logPercentage <= 0.5 ? [red, yellow] : [yellow, green]
-    const colorProgress = (logPercentage <= 0.5 ? logPercentage : logPercentage - 0.5) * 2
-    return `color-mix(in oklab, ${color2} ${colorProgress * 100}%, ${color1})`;
+export function styleFromDistance(distance: number, maxDistance: number): string {
+    const progressPercentage = distance == 0 ? 1 : Math.abs(distance) >= maxDistance ? 0 : 1 - Math.log(Math.abs(distance)) / Math.log(maxDistance);
+
+    const backgroundColor = (() => {
+        const [red, yellow, green] = ["var(--color-error)", "var(--color-warning)", "var(--color-success)"]
+        if (progressPercentage === 1) {
+            return green
+        } else if (progressPercentage === 0) {
+            return red
+        }
+        const [color1, color2] = progressPercentage <= 0.5 ? [red, yellow] : [yellow, green]
+        const colorProgress = (progressPercentage <= 0.5 ? progressPercentage : progressPercentage - 0.5) * 2
+        return [`color-mix(in oklab, ${color2} ${colorProgress * 100}%, ${color1})`, progressPercentage]
+    })();
+    return `background-image: linear-gradient(${backgroundColor}, ${backgroundColor}); ` +
+        `background-repeat: no-repeat; ` +
+        `background-position: left; ` +
+        `--bar: max(${progressPercentage * 100}%, 8px); background-size: var(--bar) 100%; ` +
+        `animation: grow-bar 0.6s ease-out;`
 }

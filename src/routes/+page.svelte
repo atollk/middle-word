@@ -2,7 +2,8 @@
     import {onMount} from 'svelte'
     import middleWordsRaw from '#lib/assets/middle_words_eng.txt?raw'
     import dictRaw from '#lib/assets/dict_eng.txt?raw'
-    import {colorFromDistance} from "#lib/color.ts";
+    import {styleFromDistance} from "#lib/color.ts";
+    import {check} from "prettier";
 
     interface Word {
         word: string;
@@ -25,16 +26,21 @@
     let middleGuessed = $state<boolean>(false)
 
     onMount(() => {
-        const middle =
-            middle_word_candidates[Math.floor(Math.random() * middle_word_candidates.length)]
-        const position = dictionary.indexOf(middle)
-        const leftStart = dictionary[position - word_distance]
-        const rightStart = dictionary[position + word_distance]
-        words = [
-            {word: leftStart, distanceToMiddle: word_distance},
-            {word: middle, distanceToMiddle: 0},
-            {word: rightStart, distanceToMiddle: -word_distance},
-        ]
+        let tmpWords: Word[] = []
+        while (tmpWords.length < 3 || !tmpWords.every(word => word.word)) {
+            const middle =
+                middle_word_candidates[Math.floor(Math.random() * middle_word_candidates.length)]
+            const position = dictionary.indexOf(middle)
+            const leftStart = dictionary[position - word_distance]
+            const rightStart = dictionary[position + word_distance]
+            tmpWords = [
+                {word: leftStart, distanceToMiddle: word_distance},
+                {word: middle, distanceToMiddle: 0},
+                {word: rightStart, distanceToMiddle: -word_distance},
+            ]
+        }
+        console.log(tmpWords)
+        words = tmpWords
     });
 
     function getMiddleWord(): [number, string] {
@@ -42,11 +48,7 @@
         return [i, words[i].word]
     }
 
-    function submit(event: SubmitEvent) {
-        event.preventDefault()
-        const word = inputWord.trim()
-        inputWord = ""
-
+    function checkSubmission(word: string) {
         const wordIndex = dictionary.indexOf(word)
         if (wordIndex == -1) {
             console.error(`${inputWord} is not a valid word`)
@@ -69,8 +71,7 @@
             return
         }
 
-        // TODO: doesnt quite work ?
-        if (inputWord == middleWord) {
+        if (word === middleWord) {
             console.log("success!")
             middleGuessed = true
             return
@@ -78,29 +79,34 @@
 
         words.splice(leftNeighborPos + 1, 0, {word: word, distanceToMiddle: wordDistance})
     }
+
+    function submit(event: SubmitEvent) {
+        event.preventDefault()
+        const word = inputWord.trim()
+        inputWord = ""
+        checkSubmission(word)
+    }
 </script>
 
 <form onsubmit={submit} class="flex items-center flex-col">
     {#if words}
         <div class="flex flex-wrap items-center flex-col">
-            {#each words as word}
+            {#each words as word (word.word)}
                 <div class="flex flex-col items-center w-full gap-2">
                     <p class="text-xs">
                         {#if word.distanceToMiddle < 0}
                             {-word.distanceToMiddle}
                         {/if}
                     </p>
-                    <p class="label text-2xl" style:background-color={colorFromDistance(word.distanceToMiddle, 10_000)}>
-                        {#if word.distanceToMiddle == 0}
-                            {#if middleGuessed}
+                    <div>
+                        {#if word.distanceToMiddle != 0 || middleGuessed}
+                            <p class="label text-2xl" style={styleFromDistance(word.distanceToMiddle, 10_000)}>
                                 {word.word}
-                            {:else}
-                                <input class="input" bind:value={inputWord}/>
-                            {/if}
+                            </p>
                         {:else}
-                            {word.word}
+                            <input class="input" bind:value={inputWord}/>
                         {/if}
-                    </p>
+                    </div>
                     <p class="text-xs">
                         {#if word.distanceToMiddle > 0}
                             {word.distanceToMiddle}

@@ -1,4 +1,17 @@
 @import "tailwindcss";
+
+@property --bar {
+	syntax: '<length-percentage>';
+	inherits: false;
+	initial-value: 0px;
+}
+
+@keyframes grow-bar {
+	from {
+		--bar: 0px;
+	}
+}
+
 @plugin "daisyui" {
 	themes: light --default, dark --prefersdark, cupcake;
 }
